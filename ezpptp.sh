@@ -79,19 +79,10 @@ echo
 echo "######################################################"
 echo "Updating IPtables Routing and Enabling it on boot"
 echo "######################################################"
-iptables -t nat -A POSTROUTING -j SNAT --to $ip
-# saves iptables routing rules and enables them on-boot
-iptables-save > /etc/iptables.conf
-
-cat > /etc/network/if-pre-up.d/iptables <<END
-#!/bin/sh
-iptables-restore < /etc/iptables.conf
-END
-
-chmod +x /etc/network/if-pre-up.d/iptables
-cat >> /etc/ppp/ip-up <<END
-ifconfig ppp0 mtu 1400
-END
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE && iptables-save
+iptables --table nat --append POSTROUTING --out-interface ppp0 -j MASQUERADE
+iptables -I INPUT -s 10.0.0.0/8 -i ppp0 -j ACCEPT
+iptables --append FORWARD --in-interface eth0 -j ACCEPT
 
 echo
 echo "######################################################"
